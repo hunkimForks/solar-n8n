@@ -23,11 +23,11 @@ jest.mock('@utils/sharedFields', () => ({
 	}),
 }));
 
-jest.mock('../n8nLlmFailedAttemptHandler', () => ({
+jest.mock('../../n8nLlmFailedAttemptHandler', () => ({
 	makeN8nLlmFailedAttemptHandler: jest.fn().mockReturnValue(jest.fn()),
 }));
 
-jest.mock('../N8nLlmTracing', () => ({
+jest.mock('../../N8nLlmTracing', () => ({
 	N8nLlmTracing: jest.fn(),
 }));
 
@@ -39,7 +39,7 @@ describe('LmChatUpstage', () => {
 	beforeEach(() => {
 		node = new LmChatUpstage();
 		mockChatOpenAI = ChatOpenAI as jest.MockedClass<typeof ChatOpenAI>;
-		
+
 		// Mock ISupplyDataFunctions
 		mockSupplyDataFunctions = mock<ISupplyDataFunctions>({
 			getCredentials: jest.fn(),
@@ -58,9 +58,9 @@ describe('LmChatUpstage', () => {
 
 	describe('Node Description', () => {
 		it('should have correct node properties', () => {
-			expect(node.description.displayName).toBe('Upstage Solar Chat Model');
+			expect(node.description.displayName).toBe('Solar Chat Model');
 			expect(node.description.name).toBe('lmChatUpstage');
-			expect(node.description.description).toBe('Language Model Upstage Solar');
+			expect(node.description.description).toBe('For advanced usage with an AI chain');
 			expect(node.description.version).toBe(1);
 			expect(node.description.credentials).toEqual([
 				{
@@ -71,10 +71,8 @@ describe('LmChatUpstage', () => {
 		});
 
 		it('should have correct model options', () => {
-			const modelProperty = node.description.properties.find(
-				(prop) => prop.name === 'model'
-			);
-			
+			const modelProperty = node.description.properties.find((prop) => prop.name === 'model');
+
 			expect(modelProperty).toBeDefined();
 			expect(modelProperty?.type).toBe('options');
 			expect(modelProperty?.options).toEqual([
@@ -103,7 +101,7 @@ describe('LmChatUpstage', () => {
 			};
 			const mockModel = 'solar-pro2-preview';
 			const mockOptions = {
-				maxTokensToSample: 2048,
+				maxTokens: 2048,
 				temperature: 0.8,
 				stream: true,
 			};
@@ -124,8 +122,13 @@ describe('LmChatUpstage', () => {
 			// Assert
 			expect(mockSupplyDataFunctions.getCredentials).toHaveBeenCalledWith('upstageApi');
 			expect(mockSupplyDataFunctions.getNodeParameter).toHaveBeenCalledWith('model', 0);
-			expect(mockSupplyDataFunctions.getNodeParameter).toHaveBeenCalledWith('options', 0, {});
-			
+			expect(mockSupplyDataFunctions.getNodeParameter).toHaveBeenCalledWith('options', 0, {
+				maxTokens: 4096,
+				temperature: 0.7,
+				reasoningEffort: 'medium',
+				stream: false,
+			});
+
 			expect(mockChatOpenAI).toHaveBeenCalledWith(
 				expect.objectContaining({
 					openAIApiKey: 'test-upstage-api-key',
@@ -133,13 +136,10 @@ describe('LmChatUpstage', () => {
 					maxTokens: 2048,
 					temperature: 0.8,
 					streaming: true,
+					configuration: expect.objectContaining({
+						baseURL: 'https://api.upstage.ai/v1',
+					}),
 				}),
-				expect.objectContaining({
-					baseURL: 'https://api.upstage.ai/v1',
-					defaultHeaders: {
-						'User-Agent': 'n8n',
-					},
-				})
 			);
 
 			expect(result.response).toBe(mockChatOpenAIInstance);
@@ -154,7 +154,12 @@ describe('LmChatUpstage', () => {
 			mockSupplyDataFunctions.getCredentials.mockResolvedValue(mockCredentials);
 			mockSupplyDataFunctions.getNodeParameter
 				.mockReturnValueOnce('solar-pro')
-				.mockReturnValueOnce({});
+				.mockReturnValueOnce({
+					maxTokens: 4096,
+					temperature: 0.7,
+					reasoningEffort: 'medium',
+					stream: false,
+				});
 
 			const mockChatOpenAIInstance = {
 				call: jest.fn(),
@@ -166,11 +171,12 @@ describe('LmChatUpstage', () => {
 
 			// Assert
 			expect(mockChatOpenAI).toHaveBeenCalledWith(
-				expect.any(Object),
 				expect.objectContaining({
-					baseURL: 'https://api.upstage.ai/v1',
-				})
+					configuration: expect.objectContaining({
+						baseURL: 'https://api.upstage.ai/v1',
+					}),
+				}),
 			);
 		});
 	});
-}); 
+});

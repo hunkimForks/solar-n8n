@@ -16,15 +16,15 @@ import { N8nLlmTracing } from '../N8nLlmTracing';
 
 export class LmChatUpstage implements INodeType {
 	description: INodeTypeDescription = {
-		displayName: 'Upstage Solar Chat Model',
+		displayName: 'Solar Chat Model',
 		// eslint-disable-next-line n8n-nodes-base/node-class-description-name-miscased
 		name: 'lmChatUpstage',
 		icon: 'file:upstage.svg',
 		group: ['transform'],
 		version: 1,
-		description: 'Language Model Upstage Solar',
+		description: 'For advanced usage with an AI chain',
 		defaults: {
-			name: 'Upstage Solar Chat Model',
+			name: 'Solar Chat Model',
 		},
 		codex: {
 			categories: ['AI'],
@@ -52,6 +52,7 @@ export class LmChatUpstage implements INodeType {
 			},
 		],
 		requestDefaults: {
+			ignoreHttpStatusErrors: true,
 			baseURL: 'https://api.upstage.ai/v1',
 		},
 		properties: [
@@ -60,6 +61,8 @@ export class LmChatUpstage implements INodeType {
 				displayName: 'Model',
 				name: 'model',
 				type: 'options',
+				description:
+					'The model which will generate the completion. <a href="https://developers.upstage.ai/docs/getting-started/models">Learn more</a>.',
 				options: [
 					{
 						name: 'solar-pro2-preview',
@@ -80,8 +83,6 @@ export class LmChatUpstage implements INodeType {
 						property: 'model',
 					},
 				},
-				description:
-					'The model which will generate the completion. <a href="https://developers.upstage.ai/docs/getting-started/models">Learn more</a>.',
 				default: 'solar-pro2-preview',
 			},
 			{
@@ -94,7 +95,7 @@ export class LmChatUpstage implements INodeType {
 				options: [
 					{
 						displayName: 'Maximum Number of Tokens',
-						name: 'maxTokensToSample',
+						name: 'maxTokens',
 						default: 4096,
 						description: 'The maximum number of tokens to generate in the completion',
 						type: 'number',
@@ -145,31 +146,36 @@ export class LmChatUpstage implements INodeType {
 		const credentials = await this.getCredentials('upstageApi');
 
 		const modelName = this.getNodeParameter('model', itemIndex) as string;
-		const options = this.getNodeParameter('options', itemIndex, {}) as {
-			maxTokensToSample?: number;
+		const options = this.getNodeParameter('options', itemIndex, {
+			maxTokens: 4096,
+			temperature: 0.7,
+			reasoningEffort: 'medium',
+			stream: false,
+		}) as {
+			maxTokens?: number;
 			temperature?: number;
 			reasoningEffort?: string;
 			stream?: boolean;
 		};
 
+		const configuration = {
+			baseURL: 'https://api.upstage.ai/v1',
+			httpAgent: getHttpProxyAgent(),
+		};
+
 		const model = new ChatOpenAI({
 			openAIApiKey: credentials.apiKey as string,
 			modelName,
-			maxTokens: options.maxTokensToSample,
+			maxTokens: options.maxTokens,
 			temperature: options.temperature,
 			streaming: options.stream,
+			configuration,
 			callbacks: [new N8nLlmTracing(this)],
-			httpAgent: getHttpProxyAgent(),
 			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
-		}, {
-			baseURL: 'https://api.upstage.ai/v1',
-			defaultHeaders: {
-				'User-Agent': 'n8n',
-			},
 		});
 
 		return {
 			response: model,
 		};
 	}
-} 
+}
