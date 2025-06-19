@@ -12,12 +12,14 @@ describe('UpstageApi Credentials', () => {
 		it('should have correct credential properties', () => {
 			expect(credentials.name).toBe('upstageApi');
 			expect(credentials.displayName).toBe('Upstage');
-			expect(credentials.documentationUrl).toBe('upstage');
+			expect(credentials.documentationUrl).toBe(
+				'https://console.upstage.ai/docs/capabilities/chat',
+			);
 		});
 
 		it('should have API key property with correct configuration', () => {
 			expect(credentials.properties).toHaveLength(1);
-			
+
 			const apiKeyProperty = credentials.properties[0];
 			expect(apiKeyProperty.displayName).toBe('API Key');
 			expect(apiKeyProperty.name).toBe('apiKey');
@@ -56,7 +58,7 @@ describe('UpstageApi Credentials', () => {
 	describe('Test Configuration', () => {
 		it('should have correct test request configuration', () => {
 			const testRequest: ICredentialTestRequest = credentials.test;
-			
+
 			expect(testRequest.request.baseURL).toBe('https://api.upstage.ai/v1');
 			expect(testRequest.request.url).toBe('/models');
 		});
@@ -81,7 +83,7 @@ describe('UpstageApi Credentials', () => {
 		});
 
 		it('should have required properties for API key credential', () => {
-			const apiKeyProperty = credentials.properties.find(prop => prop.name === 'apiKey');
+			const apiKeyProperty = credentials.properties.find((prop) => prop.name === 'apiKey');
 			expect(apiKeyProperty).toBeDefined();
 			expect(apiKeyProperty?.required).toBe(true);
 			expect(apiKeyProperty?.type).toBe('string');
@@ -142,4 +144,4 @@ describe('UpstageApi Credentials', () => {
 			expect(credentials.test.request.baseURL).toBe('https://api.upstage.ai/v1');
 		});
 	});
-}); 
+});

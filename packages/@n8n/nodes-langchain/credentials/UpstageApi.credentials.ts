@@ -10,7 +10,7 @@ export class UpstageApi implements ICredentialType {
 
 	displayName = 'Upstage';
 
-	documentationUrl = 'upstage';
+	documentationUrl = 'https://console.upstage.ai/docs/capabilities/chat';
 
 	properties: INodeProperties[] = [
 		{
@@ -40,4 +40,4 @@ export class UpstageApi implements ICredentialType {
 			url: '/models',
 		},
 	};
-} 
+}
