@@ -63,20 +63,45 @@ export class LmChatUpstage implements INodeType {
 				type: 'options',
 				description:
 					'The model which will generate the completion. <a href="https://developers.upstage.ai/docs/getting-started/models">Learn more</a>.',
-				options: [
-					{
-						name: 'solar-pro2-preview',
-						value: 'solar-pro2-preview',
+				typeOptions: {
+					loadOptions: {
+						routing: {
+							request: {
+								method: 'GET',
+								url: '/models',
+							},
+							output: {
+								postReceive: [
+									{
+										type: 'rootProperty',
+										properties: {
+											property: 'data',
+										},
+									},
+									{
+										type: 'filter',
+										properties: {
+											pass: "={{ $responseItem.id.startsWith('solar-') }}",
+										},
+									},
+									{
+										type: 'setKeyValue',
+										properties: {
+											name: '={{ $responseItem.id }}',
+											value: '={{ $responseItem.id }}',
+										},
+									},
+									{
+										type: 'sort',
+										properties: {
+											key: 'name',
+										},
+									},
+								],
+							},
+						},
 					},
-					{
-						name: 'solar-pro',
-						value: 'solar-pro',
-					},
-					{
-						name: 'solar-mini',
-						value: 'solar-mini',
-					},
-				],
+				},
 				routing: {
 					send: {
 						type: 'body',

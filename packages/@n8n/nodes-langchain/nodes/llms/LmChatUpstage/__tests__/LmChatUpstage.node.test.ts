@@ -70,25 +70,14 @@ describe('LmChatUpstage', () => {
 			]);
 		});
 
-		it('should have correct model options', () => {
+		it('should have correct model configuration with dynamic loading', () => {
 			const modelProperty = node.description.properties.find((prop) => prop.name === 'model');
 
 			expect(modelProperty).toBeDefined();
 			expect(modelProperty?.type).toBe('options');
-			expect(modelProperty?.options).toEqual([
-				{
-					name: 'solar-pro2-preview',
-					value: 'solar-pro2-preview',
-				},
-				{
-					name: 'solar-pro',
-					value: 'solar-pro',
-				},
-				{
-					name: 'solar-mini',
-					value: 'solar-mini',
-				},
-			]);
+			expect(modelProperty?.typeOptions?.loadOptions).toBeDefined();
+			expect(modelProperty?.typeOptions?.loadOptions?.routing?.request?.method).toBe('GET');
+			expect(modelProperty?.typeOptions?.loadOptions?.routing?.request?.url).toBe('/models');
 			expect(modelProperty?.default).toBe('solar-pro2-preview');
 		});
 	});
