@@ -6,6 +6,8 @@ import {
 	type INodeTypeDescription,
 	type ISupplyDataFunctions,
 	type SupplyData,
+	type IExecuteSingleFunctions,
+	type INodeExecutionData,
 } from 'n8n-workflow';
 
 import { getHttpProxyAgent } from '@utils/httpProxyAgent';
@@ -72,30 +74,34 @@ export class LmChatUpstage implements INodeType {
 							},
 							output: {
 								postReceive: [
-									{
-										type: 'rootProperty',
-										properties: {
-											property: 'data',
-										},
-									},
-									{
-										type: 'filter',
-										properties: {
-											pass: "={{ $responseItem.id.startsWith('solar-') }}",
-										},
-									},
-									{
-										type: 'setKeyValue',
-										properties: {
-											name: '={{ $responseItem.id }}',
-											value: '={{ $responseItem.id }}',
-										},
-									},
-									{
-										type: 'sort',
-										properties: {
-											key: 'name',
-										},
+									// Custom function to deduplicate and process models
+									async function (
+										this: IExecuteSingleFunctions,
+										items: INodeExecutionData[],
+									): Promise<INodeExecutionData[]> {
+										// Extract data from response
+										const data = items[0]?.json?.data;
+										if (!Array.isArray(data)) return items;
+
+										// Filter Solar models
+										const solarModels = data.filter((model: any) => model.id?.startsWith('solar-'));
+
+										// Create name-value pairs and deduplicate
+										const modelOptions = solarModels.map((model: any) => ({
+											name: model.id,
+											value: model.id,
+										}));
+
+										// Remove duplicates based on value
+										const uniqueModels = modelOptions.filter(
+											(item, index, array) =>
+												array.findIndex((t) => t.value === item.value) === index,
+										);
+
+										// Sort by name
+										uniqueModels.sort((a, b) => a.name.localeCompare(b.name));
+
+										return uniqueModels.map((model) => ({ json: model }));
 									},
 								],
 							},
