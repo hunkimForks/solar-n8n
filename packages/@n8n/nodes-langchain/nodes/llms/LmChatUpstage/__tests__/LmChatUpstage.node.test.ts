@@ -103,7 +103,7 @@ describe('LmChatUpstage', () => {
 			const mockOptions = {
 				maxTokens: 2048,
 				temperature: 0.8,
-				stream: true,
+				reasoningEffort: 'high',
 			};
 
 			mockSupplyDataFunctions.getCredentials.mockResolvedValue(mockCredentials);
@@ -126,7 +126,6 @@ describe('LmChatUpstage', () => {
 				maxTokens: 4096,
 				temperature: 0.7,
 				reasoningEffort: 'medium',
-				stream: false,
 			});
 
 			expect(mockChatOpenAI).toHaveBeenCalledWith(
@@ -135,9 +134,12 @@ describe('LmChatUpstage', () => {
 					modelName: 'solar-pro2-preview',
 					maxTokens: 2048,
 					temperature: 0.8,
-					streaming: true,
+					streaming: false,
 					configuration: expect.objectContaining({
 						baseURL: 'https://api.upstage.ai/v1',
+					}),
+					modelKwargs: expect.objectContaining({
+						reasoning_effort: 'high',
 					}),
 				}),
 			);
@@ -158,7 +160,6 @@ describe('LmChatUpstage', () => {
 					maxTokens: 4096,
 					temperature: 0.7,
 					reasoningEffort: 'medium',
-					stream: false,
 				});
 
 			const mockChatOpenAIInstance = {

@@ -130,13 +130,6 @@ export class LmChatUpstage implements INodeType {
 						default: 'medium',
 						description: 'The reasoning effort for the model to use',
 					},
-					{
-						displayName: 'Stream',
-						name: 'stream',
-						type: 'boolean',
-						default: false,
-						description: 'Whether to stream the response',
-					},
 				],
 			},
 		],
@@ -150,12 +143,10 @@ export class LmChatUpstage implements INodeType {
 			maxTokens: 4096,
 			temperature: 0.7,
 			reasoningEffort: 'medium',
-			stream: false,
 		}) as {
 			maxTokens?: number;
 			temperature?: number;
 			reasoningEffort?: string;
-			stream?: boolean;
 		};
 
 		const configuration = {
@@ -168,12 +159,11 @@ export class LmChatUpstage implements INodeType {
 			modelName,
 			maxTokens: options.maxTokens,
 			temperature: options.temperature,
-			streaming: false, // Disable streaming for now to avoid stream_options issue
+			streaming: false, // Streaming disabled to avoid stream_options compatibility issues
 			configuration,
 			callbacks: [new N8nLlmTracing(this)],
 			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
 			modelKwargs: {
-				stream: options.stream, // Pass stream in modelKwargs instead
 				...(options.reasoningEffort ? { reasoning_effort: options.reasoningEffort } : {}),
 			},
 		});
