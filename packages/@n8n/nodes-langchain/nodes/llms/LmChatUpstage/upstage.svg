@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="sunGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#FFA500;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FF6B35;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Main circle representing the sun/solar -->
+  <circle cx="50" cy="50" r="30" fill="url(#sunGradient)" />
+  
+  <!-- Sun rays -->
+  <g stroke="#FFA500" stroke-width="3" stroke-linecap="round">
+    <!-- Top rays -->
+    <line x1="50" y1="10" x2="50" y2="15" />
+    <line x1="35.8" y1="14.2" x2="38.4" y2="18.4" />
+    <line x1="64.2" y1="14.2" x2="61.6" y2="18.4" />
+    
+    <!-- Side rays -->
+    <line x1="10" y1="50" x2="15" y2="50" />
+    <line x1="85" y1="50" x2="90" y2="50" />
+    <line x1="14.2" y1="35.8" x2="18.4" y2="38.4" />
+    <line x1="81.6" y1="61.6" x2="85.8" y2="64.2" />
+    
+    <!-- Bottom rays -->
+    <line x1="50" y1="85" x2="50" y2="90" />
+    <line x1="35.8" y1="85.8" x2="38.4" y2="81.6" />
+    <line x1="64.2" y1="85.8" x2="61.6" y2="81.6" />
+    
+    <!-- Diagonal rays -->
+    <line x1="14.2" y1="64.2" x2="18.4" y2="61.6" />
+    <line x1="81.6" y1="38.4" x2="85.8" y2="35.8" />
+  </g>
+  
+  <!-- Inner highlight -->
+  <circle cx="45" cy="40" r="8" fill="#FFEB3B" opacity="0.7" />
+</svg> 
