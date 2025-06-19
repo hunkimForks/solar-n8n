@@ -168,10 +168,14 @@ export class LmChatUpstage implements INodeType {
 			modelName,
 			maxTokens: options.maxTokens,
 			temperature: options.temperature,
-			streaming: options.stream,
+			streaming: false, // Disable streaming for now to avoid stream_options issue
 			configuration,
 			callbacks: [new N8nLlmTracing(this)],
 			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
+			modelKwargs: {
+				stream: options.stream, // Pass stream in modelKwargs instead
+				...(options.reasoningEffort ? { reasoning_effort: options.reasoningEffort } : {}),
+			},
 		});
 
 		return {
