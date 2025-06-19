@@ -35,7 +35,7 @@ export class LmChatUpstage implements INodeType {
 			resources: {
 				primaryDocumentation: [
 					{
-						url: 'https://docs.n8n.io/integrations/builtin/cluster-nodes/sub-nodes/n8n-nodes-langchain.lmchatupstage/',
+						url: 'https://console.upstage.ai/docs/capabilities/chat',
 					},
 				],
 			},
