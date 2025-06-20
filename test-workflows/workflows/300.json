@@ -1,0 +1,120 @@
+{
+  "createdAt": "2025-01-22T18:00:00.000Z",
+  "updatedAt": "2025-01-22T18:00:00.000Z",
+  "id": "300",
+  "name": "Agent:SolarLLM:streaming",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "9152fa2f-1cf1-4745-bf52-3d3374e501c5",
+      "name": "When clicking \"Test workflow\"",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        820
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "What is 2 + 2? Only provide the numerical answer.",
+        "options": {
+          "systemMessage": "You are a helpful assistant. Be concise.",
+          "maxIterations": 5
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2,
+      "position": [
+        480,
+        820
+      ],
+      "id": "1c390448-79da-4a49-b7f2-3a7a99a23167",
+      "name": "AI Agent"
+    },
+    {
+      "parameters": {
+        "model": "solar-pro2-preview",
+        "options": {
+          "temperature": 0,
+          "maxTokens": 100,
+          "reasoningEffort": "medium",
+          "streaming": true
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatUpstage",
+      "typeVersion": 1,
+      "position": [
+        240,
+        1100
+      ],
+      "id": "71ffd19c-f0eb-4735-bdd5-4c8e9511fcc2",
+      "name": "Solar Chat Model",
+      "credentials": {
+        "upstageApi": {
+          "id": "test-upstage-cred",
+          "name": "Upstage API Test"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "calculate",
+        "expression": "={{$json.expression}}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.toolCalculator",
+      "typeVersion": 1,
+      "position": [
+        720,
+        1100
+      ],
+      "id": "72cafb7e-889c-46cf-bfe1-ac71e9803037",
+      "name": "Calculator"
+    }
+  ],
+  "connections": {
+    "When clicking \"Test workflow\"": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Solar Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculator": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "meta": {}
+} 
