@@ -19,120 +19,9 @@ import { N8nLlmTracing } from '../N8nLlmTracing';
 /**
  * Solar LLM Node with Streaming Support
  *
- * This node implements streaming support for Upstage Solar LLM models and includes
- * an adapter to handle OpenAI-compatible stream_options parameters.
- *
- * Streaming Support:
- * - Native streaming via the "Streaming" option in the node UI
- * - Automatic conversion of OpenAI-style stream_options to Solar LLM format
- *
- * Stream Options Adapter:
- * The adapter handles incoming stream_options from other systems that use OpenAI-compatible APIs:
- *
- * Example OpenAI format:
- * {
- *   "model": "solar-pro",
- *   "messages": [...],
- *   "stream_options": { "include_usage": true }
- * }
- *
- * Gets converted to Solar LLM format:
- * {
- *   "model": "solar-pro",
- *   "messages": [...],
- *   "stream": true
- * }
- *
- * The adapter automatically removes stream_options and enables streaming on the model.
+ * This node provides integration with Upstage Solar LLM models with full streaming support.
+ * Solar LLM now natively supports OpenAI-compatible stream_options parameters.
  */
-
-/**
- * Adapter function to convert OpenAI-style stream_options to Solar LLM streaming format
- * @param streamOptions - OpenAI-style stream_options object
- * @returns boolean indicating if streaming should be enabled
- */
-function adaptStreamOptions(streamOptions?: any): boolean {
-	if (!streamOptions) return false;
-
-	// Handle OpenAI-style stream_options
-	if (typeof streamOptions === 'object') {
-		// OpenAI stream_options can have { include_usage: boolean }
-		// For Solar LLM, we just need to enable streaming if stream_options is present
-		return true;
-	}
-
-	// Handle boolean stream_options
-	if (typeof streamOptions === 'boolean') {
-		return streamOptions;
-	}
-
-	return false;
-}
-
-/**
- * Process model kwargs to filter out stream_options and adapt them for Solar LLM
- * @param modelKwargs - Raw model kwargs that may contain stream_options
- * @returns Processed kwargs with stream_options removed and streaming enabled if needed
- */
-function processModelKwargs(modelKwargs: any = {}): { kwargs: any; streamingEnabled: boolean } {
-	if (!modelKwargs || typeof modelKwargs !== 'object') {
-		return { kwargs: modelKwargs || {}, streamingEnabled: false };
-	}
-
-	const { stream_options, ...processedKwargs } = modelKwargs;
-	const streamingEnabled = adaptStreamOptions(stream_options);
-
-	if (stream_options) {
-		console.log('🔄 Processed stream_options in modelKwargs:', stream_options);
-		console.log('✅ Streaming enabled from stream_options:', streamingEnabled);
-	}
-
-	return { kwargs: processedKwargs, streamingEnabled };
-}
-
-/**
- * Create a custom fetch function that filters stream_options from HTTP requests
- */
-function createStreamOptionsFilteringFetch(): typeof fetch {
-	return async (url: RequestInfo | URL, options?: RequestInit) => {
-		// Filter stream_options from the request body
-		if (options?.body && typeof options.body === 'string') {
-			try {
-				const bodyData = JSON.parse(options.body);
-				if (bodyData && typeof bodyData === 'object' && 'stream_options' in bodyData) {
-					console.log('🗑️ Filtering stream_options from HTTP request body');
-					const { stream_options, ...cleanBody } = bodyData;
-
-					// Enable streaming if stream_options was present
-					if (adaptStreamOptions(stream_options)) {
-						cleanBody.stream = true;
-						console.log('✅ Enabled streaming for Solar LLM');
-					}
-
-					const newBody = JSON.stringify(cleanBody);
-
-					// Create new options with updated body and headers
-					const newHeaders = new Headers(options.headers);
-
-					// Update Content-Length to match the new body
-					newHeaders.set('Content-Length', Buffer.byteLength(newBody, 'utf8').toString());
-
-					options = {
-						...options,
-						body: newBody,
-						headers: newHeaders,
-					};
-				}
-			} catch (error) {
-				// If JSON parsing fails, continue with original body
-				console.warn('Could not parse request body for stream_options filtering:', error);
-			}
-		}
-
-		// Use the global fetch function
-		return await fetch(url, options);
-	};
-}
 
 export class LmChatUpstage implements INodeType {
 	description: INodeTypeDescription = {
@@ -516,35 +405,29 @@ export class LmChatUpstage implements INodeType {
 			streaming?: boolean;
 		};
 
-		// Process any modelKwargs that might contain stream_options
+		// Get modelKwargs directly - Solar LLM now supports stream_options natively
 		const modelKwargs = this.getNodeParameter('modelKwargs', itemIndex, {}) as any;
-		const { kwargs: processedKwargs, streamingEnabled } = processModelKwargs(modelKwargs);
 
-		// Determine final streaming setting - prioritize stream_options over user setting
-		const finalStreaming = streamingEnabled || options.streaming || false;
-
-		// Create configuration with custom fetch that filters stream_options
+		// Standard configuration for Solar LLM
 		const configuration = {
 			baseURL: 'https://api.upstage.ai/v1',
 			httpAgent: getHttpProxyAgent(),
 			defaultHeaders: {
 				'Content-Type': 'application/json',
 			},
-			// Custom fetch function to filter stream_options from HTTP requests
-			fetch: createStreamOptionsFilteringFetch(),
 		};
 
-		// Create the model with simple configuration
+		// Create the model with direct configuration
 		const model = new ChatOpenAI({
 			openAIApiKey: credentials.apiKey as string,
 			modelName,
 			maxTokens: options.maxTokens,
 			temperature: options.temperature,
-			streaming: finalStreaming,
+			streaming: options.streaming || false,
 			configuration,
 			callbacks: [new N8nLlmTracing(this)],
 			onFailedAttempt: makeN8nLlmFailedAttemptHandler(this),
-			modelKwargs: processedKwargs,
+			modelKwargs,
 		});
 
 		return {

@@ -139,7 +139,6 @@ describe('LmChatUpstage', () => {
 					defaultHeaders: {
 						'Content-Type': 'application/json',
 					},
-					fetch: expect.any(Function),
 				}),
 				callbacks: expect.any(Array),
 				onFailedAttempt: expect.any(Function),
@@ -182,39 +181,8 @@ describe('LmChatUpstage', () => {
 			);
 		});
 
-		it('should handle stream_options conversion from OpenAI format', async () => {
+		it('should pass through stream_options in modelKwargs directly', async () => {
 			// Set up modelKwargs with stream_options
-			mockSupplyDataFunctions.getNodeParameter.mockImplementation(
-				(paramName: string, itemIndex: number, defaultValue?: any) => {
-					if (paramName === 'model') return 'solar-pro';
-					if (paramName === 'options') return {};
-					if (paramName === 'modelKwargs')
-						return {
-							stream_options: { include_usage: true },
-						};
-					return defaultValue;
-				},
-			);
-
-			await node.supplyData.call(mockSupplyDataFunctions, 0);
-
-			// Verify streaming was enabled due to stream_options
-			expect(ChatOpenAI).toHaveBeenCalledWith(
-				expect.objectContaining({
-					streaming: true,
-					modelKwargs: {}, // stream_options should be filtered out
-				}),
-			);
-		});
-
-		it('should return proxy model with stream_options adapter', async () => {
-			const result = await node.supplyData.call(mockSupplyDataFunctions, 0);
-
-			expect(result.response).toBeDefined();
-			expect(result.response).toBe(mockChatOpenAIInstance);
-		});
-
-		it('should filter out stream_options from modelKwargs during initialization', async () => {
 			mockSupplyDataFunctions.getNodeParameter.mockImplementation(
 				(paramName: string, itemIndex: number, defaultValue?: any) => {
 					if (paramName === 'model') return 'solar-pro';
@@ -231,17 +199,24 @@ describe('LmChatUpstage', () => {
 
 			await node.supplyData.call(mockSupplyDataFunctions, 0);
 
-			// Verify stream_options was filtered out but other params remain
+			// Verify stream_options is passed through directly since Solar LLM now supports it
 			expect(ChatOpenAI).toHaveBeenCalledWith(
 				expect.objectContaining({
-					streaming: true, // Should be enabled due to stream_options
+					streaming: false, // Should use option setting, not auto-enabled from stream_options
 					modelKwargs: {
+						stream_options: { include_usage: true },
 						temperature: 0.5,
 						max_tokens: 100,
-						// stream_options should be absent
 					},
 				}),
 			);
+		});
+
+		it('should return model instance', async () => {
+			const result = await node.supplyData.call(mockSupplyDataFunctions, 0);
+
+			expect(result.response).toBeDefined();
+			expect(result.response).toBe(mockChatOpenAIInstance);
 		});
 
 		it('should auto-select a solar model when no model is specified', async () => {
@@ -451,69 +426,6 @@ describe('LmChatUpstage', () => {
 			expect(modelNames).toContain('solar-1-mini');
 			expect(modelNames).toContain('solar-mini-250422');
 			expect(modelNames).toContain('solar-pro-240101');
-		});
-	});
-
-	describe('Stream Options HTTP Filtering', () => {
-		it('should filter stream_options from HTTP request body', async () => {
-			// Mock the node parameters for this test
-			mockSupplyDataFunctions.getNodeParameter.mockImplementation(
-				(paramName: string, itemIndex: number, defaultValue?: any) => {
-					if (paramName === 'model') return 'solar-pro';
-					if (paramName === 'options') return {};
-					if (paramName === 'modelKwargs') return {};
-					return defaultValue;
-				},
-			);
-
-			const result = await node.supplyData.call(mockSupplyDataFunctions, 0);
-			const model = result.response as ChatOpenAI;
-
-			// Get the configuration object that was passed to ChatOpenAI
-			const chatOpenAICall = (ChatOpenAI as jest.MockedClass<typeof ChatOpenAI>).mock.calls[0]?.[0];
-			const customFetch = chatOpenAICall?.configuration?.fetch;
-
-			if (!customFetch) {
-				throw new Error('Custom fetch function not found in configuration');
-			}
-
-			// Mock fetch to capture the actual request
-			const mockFetch = jest.fn().mockResolvedValue({
-				ok: true,
-				json: async () => ({ choices: [] }),
-			} as Response);
-
-			// Replace global fetch temporarily
-			const originalFetch = global.fetch;
-			global.fetch = mockFetch;
-
-			try {
-				// Test the custom fetch function
-				await customFetch('https://api.upstage.ai/v1/chat/completions', {
-					method: 'POST',
-					body: JSON.stringify({
-						model: 'solar-pro',
-						messages: [{ role: 'user', content: 'test' }],
-						stream_options: { include_usage: true },
-					}),
-				});
-
-				// Verify that stream_options was filtered out and stream was added
-				expect(mockFetch).toHaveBeenCalledWith(
-					'https://api.upstage.ai/v1/chat/completions',
-					expect.objectContaining({
-						method: 'POST',
-						body: JSON.stringify({
-							model: 'solar-pro',
-							messages: [{ role: 'user', content: 'test' }],
-							stream: true,
-						}),
-						headers: expect.any(Headers),
-					}),
-				);
-			} finally {
-				global.fetch = originalFetch;
-			}
 		});
 	});
 });
